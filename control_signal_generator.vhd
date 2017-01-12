@@ -4,13 +4,10 @@ use work.components.all;
 
 Entity control_signal_generator is
 generic(input_size : integer := 8);
-
 port ( 	clock : in std_logic;
 	input_A : in std_logic_vector (input_size-1 downto 0);
 	input_X : in std_logic_vector (input_size-1 downto 0);
 	Y_result : out std_logic_vector (input_size-1 downto 0));
-
-
 end control_signal_generator;
 
 architecture fsm of control_signal_generator is

@@ -1,8 +1,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-Entity generic_register is
-	generic (n : integer := 16);
+entity generic_register is
+	generic (n : integer);
 	port (	clock : in std_logic;
 		reset : in std_logic;
 		enable : in std_logic;
