@@ -7,7 +7,7 @@ end test_fsm;
 architecture tb_behavior of test_fsm is
 
 constant data_width : integer := 4;
-constant clk_period : time := 2 ns;
+constant clk_period : time := 4 ns;
 
 -- We need to use the fsm as a component in order to be visible in our testbench
 component control_signal_generator  is
@@ -68,6 +68,5 @@ begin
 		A <= "0001";
 		X <= "0001";
 		wait for clk_period;
-		wait;
 	end process;
 end tb_behavior;

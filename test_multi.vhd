@@ -9,7 +9,6 @@ architecture tb_multi_behavior of test_multi is
 
 constant data_width : integer := 4;
 
-
 component multiply is
         generic (n : integer := 8);
 	port (	A,X : in std_logic_vector (data_width-1 downto 0);
@@ -52,7 +51,7 @@ begin
 	X <= "0110";
 	wait for 5 ns;
 	A <= "0001";
-	X <= "0111";
+	X <= "0001";
 	wait for 5 ns;
 	end process;
 end tb_multi_behavior;

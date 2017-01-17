@@ -1,8 +1,11 @@
 library ieee;
+library std;
 use ieee.std_logic_1164.all;
 use work.components.all;
+use std.textio.all; -- to print signals
+use ieee.std_logic_textio.all; -- to print signals
 
-Entity control_signal_generator is
+entity control_signal_generator is
 generic(input_size : integer);
 port ( 	clock : in std_logic;
 	input_A : in std_logic_vector (input_size-1 downto 0);
@@ -32,24 +35,58 @@ begin
 	multiply_unit : multiply generic map (input_size) port map (A_mult_in,X_mult_in,prod);
 	addition_unit : adder generic map (2*input_size) port map (cin,prod,adder_input_from_r3,adder_output,cout);
 
+
 	process(clock)
+		variable my_line : line;
 	begin
 		if rising_edge(clock) then
-			if(reset_and_recompute = '1') then -- synchronous reset
-				state <= s1;
-                        end if;
 			    case state is
 				when s1 => --a0x0
+					report "State S1";
+					write (my_line,string'("product is "));
+					write(my_line,prod);
+	  				writeline(output, my_line); 
+					write (my_line,string'("adder_output is "));
+					write(my_line,adder_output);
+	  				writeline(output, my_line); 
 					state <= s2;
 					reset_and_recompute <= '0';
 					enable_total_output <= '0';
 				when s2 => --a1x1+a0x0
+					report "State S2";
+					write (my_line,string'("product is "));
+					write(my_line,prod);
+	  				writeline(output, my_line); 
+					write (my_line,string'("adder_output is "));
+					write(my_line,adder_output);
+	  				writeline(output, my_line); 
 					state <= s3;
-				when s3 => --a2x2+...
+				when s3 => --a2x2+...+a0x0
+					report "State S3";
+					write (my_line,string'("product is "));
+					write(my_line,prod);
+	  				writeline(output, my_line); 
+					write (my_line,string'("adder_output is "));
+					write(my_line,adder_output);
+	  				writeline(output, my_line); 
 					state <= s4;
-				when s4 =>--a3x3+....
+				when s4 =>--a3x3+....+a0x0
+					report "State S4";
+					write (my_line,string'("product is "));
+					write(my_line,prod);
+	  				writeline(output, my_line); 
+					write (my_line,string'("adder_output is "));
+					write(my_line,adder_output);
+	  				writeline(output, my_line); 
 					state <= s5;
-				when s5 => --a4x4+...
+				when s5 => --a4x4+...+a0x0
+					report "State S5";
+					write (my_line,string'("product is "));
+					write(my_line,prod);
+	  				writeline(output, my_line); 
+					write (my_line,string'("adder_output is "));
+					write(my_line,adder_output);
+	  				writeline(output, my_line); 
 					state <= s1;
 					enable_total_output <= '1';
 					reset_and_recompute <= '1';
