@@ -35,6 +35,7 @@ begin
 
 	stimul_proc : process
 	begin
+		wait for 1 ns;
 		A <= "0001";
 		X <= "0001";
 		wait for clk_period;

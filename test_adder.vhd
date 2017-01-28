@@ -26,6 +26,7 @@ begin
 	adder_comp_mapping : adder generic map (n=>data_width) port map('0',A=>A,X=>X,S=>Sum,Cout=>Cout);
 	process
 	begin
+	Cin <= '0';
 	wait for 5 ns;
 	A <="0010";
 	X <="0010";
