@@ -7,7 +7,8 @@ use ieee.std_logic_textio.all; -- to print signals
 
 entity control_signal_generator is
     generic(input_size : integer);
-    port ( 	clock : in std_logic;
+    port ( 	start_running : in std_logic;            
+            clock : in std_logic;
             input_A : in std_logic_vector (input_size-1 downto 0);
             input_X : in std_logic_vector (input_size-1 downto 0);
             Y_result : out std_logic_vector (2*input_size-1 downto 0));
@@ -35,11 +36,14 @@ begin
 	multiply_unit : multiply generic map (input_size) port map (A_mult_in,X_mult_in,prod);
 	addition_unit : adder generic map (2*input_size) port map (cin,prod,adder_input_from_r3,adder_output,cout);
 
+    -- HERE ADD 3 RAMs for inputs and outputs!!!!!
+
 
 	process(clock)
 		variable my_line : line;
 	begin
 		if rising_edge(clock) then
+            if start_running = '1' then
 			    case state is
 				when s1 => --a0x0
 					report "State S1";
@@ -91,6 +95,7 @@ begin
 					enable_total_output <= '1';
 					reset_and_recompute <= '1';
 			    end case;
+            end if;
 		end if;
 	end process;
 end fsm;
