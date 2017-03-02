@@ -4,14 +4,19 @@ use ieee.std_logic_1164.all;
 use work.components.all;
 use std.textio.all; -- to print signals
 use ieee.std_logic_textio.all; -- to print signals
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
 
 entity control_signal_generator is
-    generic(input_size : integer);
-    port ( 	start_running : in std_logic;            
+    generic(input_size : integer;
+            address_bus : integer
+           );
+    port ( 	start_running : in std_logic; -- After writting every data inside input RAMs, then FSM should start running
+            input_ram_we : in std_logic; -- Set it only to write data inside input RAMs, afterwards just unset it
             clock : in std_logic;
-            input_A : in std_logic_vector (input_size-1 downto 0);
-            input_X : in std_logic_vector (input_size-1 downto 0);
-            Y_result : out std_logic_vector (2*input_size-1 downto 0));
+            ram_input_A : in std_logic_vector (input_size-1 downto 0);
+            ram_input_X : in std_logic_vector (input_size-1 downto 0);
+            ram_output_result : out std_logic_vector (2*input_size-1 downto 0));
 end control_signal_generator;
 
 architecture fsm of control_signal_generator is
@@ -23,6 +28,10 @@ architecture fsm of control_signal_generator is
     signal A_mult_in,X_mult_in : std_logic_vector (input_size-1 downto 0);
     signal prod,adder_output,adder_input_from_r3 : std_logic_vector (2*input_size-1 downto 0);
     signal cin,cout : std_logic;
+
+    -- inputs and output from the previously (1st exercise) now become internal signals
+    signal input_A,input_X : std_logic_vector (input_size-1 downto 0);
+    signal Y_result : std_logic_vector (2*input_size-1 downto 0);
 
 begin
 	cin <= '0';
@@ -36,7 +45,13 @@ begin
 	multiply_unit : multiply generic map (input_size) port map (A_mult_in,X_mult_in,prod);
 	addition_unit : adder generic map (2*input_size) port map (cin,prod,adder_input_from_r3,adder_output,cout);
 
+    -- for addresses and rams
+    signal input_addr_ptr, output_addr_ptr, tmp_address_ptr : std_logic_vector(2**address_bus-1 downto 0);
+    signal input_ram_we, output_ram_we std_logic;
     -- HERE ADD 3 RAMs for inputs and outputs!!!!!
+    bl_ram_write_first : input_A_ram generic map(address_bus,input_size) port map(clock, input_ram_we, input_addr_ptr, ram_input_A, input_A);
+    bl_ram_write_first : input_X_ram generic map(address_bus,input_size) port map(clock, input_ram_we, input_addr_ptr, ram_input_X, input_X);
+    bl_ram_write_first : output_ram generic map(address_bus,2*input_size) port map(clock, output_ram_we, output_addr_ptr, Y_result, ram_output_result);
 
 
 	process(clock)
@@ -44,57 +59,83 @@ begin
 	begin
 		if rising_edge(clock) then
             if start_running = '1' then
-			    case state is
-				when s1 => --a0x0
-					report "State S1";
-					write (my_line,string'("product is "));
-					write(my_line,prod);
-	  				writeline(output, my_line); 
-					write (my_line,string'("adder_output is "));
-					write(my_line,adder_output);
-	  				writeline(output, my_line); 
-					state <= s2;
-					reset_and_recompute <= '0';
-					enable_total_output <= '0';
-				when s2 => --a1x1+a0x0
-					report "State S2";
-					write (my_line,string'("product is "));
-					write(my_line,prod);
-	  				writeline(output, my_line); 
-					write (my_line,string'("adder_output is "));
-					write(my_line,adder_output);
-	  				writeline(output, my_line); 
-					state <= s3;
-				when s3 => --a2x2+...+a0x0
-					report "State S3";
-					write (my_line,string'("product is "));
-					write(my_line,prod);
-	  				writeline(output, my_line); 
-					write (my_line,string'("adder_output is "));
-					write(my_line,adder_output);
-	  				writeline(output, my_line); 
-					state <= s4;
-				when s4 =>--a3x3+....+a0x0
-					report "State S4";
-					write (my_line,string'("product is "));
-					write(my_line,prod);
-	  				writeline(output, my_line); 
-					write (my_line,string'("adder_output is "));
-					write(my_line,adder_output);
-	  				writeline(output, my_line); 
-					state <= s5;
-				when s5 => --a4x4+...+a0x0
-					report "State S5";
-					write (my_line,string'("product is "));
-					write(my_line,prod);
-	  				writeline(output, my_line); 
-					write (my_line,string'("adder_output is "));
-					write(my_line,adder_output);
-	  				writeline(output, my_line); 
-					state <= s1;
-					enable_total_output <= '1';
-					reset_and_recompute <= '1';
-			    end case;
+                case state is
+                    when s1 => --a0x0
+                        report "State S1";
+                        write (my_line,string'("product is "));
+                        write(my_line,prod);
+                        writeline(output, my_line); 
+                        write (my_line,string'("adder_output is "));
+                        write(my_line,adder_output);
+                        writeline(output, my_line); 
+
+                        state <= s2;
+                        reset_and_recompute <= '0';
+                        enable_total_output <= '0';
+                        tmp_address_ptr <= input_addr_ptr; --increase address of input RAM
+                        input_addr_ptr <= tmp_addr_ptr + '1';
+                        output_ram_we <= '0';   -- unset write enable for the output RAM so that
+                                                -- no new data are written there
+
+
+                    when s2 => --a1x1+a0x0
+                        report "State S2";
+                        write (my_line,string'("product is "));
+                        write(my_line,prod);
+                        writeline(output, my_line); 
+                        write (my_line,string'("adder_output is "));
+                        write(my_line,adder_output);
+                        writeline(output, my_line); 
+
+                        state <= s3;
+                        tmp_address_ptr <= input_addr_ptr; --increase address of input RAM
+                        input_addr_ptr <= tmp_addr_ptr + '1';
+
+
+                    when s3 => --a2x2+...+a0x0
+                        report "State S3";
+                        write (my_line,string'("product is "));
+                        write(my_line,prod);
+                        writeline(output, my_line); 
+                        write (my_line,string'("adder_output is "));
+                        write(my_line,adder_output);
+                        writeline(output, my_line); 
+
+                        state <= s4;
+                        tmp_address_ptr <= input_addr_ptr; --increase address of input RAM
+                        input_addr_ptr <= tmp_addr_ptr + '1';
+
+                    when s4 =>--a3x3+....+a0x0
+                        report "State S4";
+                        write (my_line,string'("product is "));
+                        write(my_line,prod);
+                        writeline(output, my_line); 
+                        write (my_line,string'("adder_output is "));
+                        write(my_line,adder_output);
+                        writeline(output, my_line); 
+
+                        state <= s5;
+                        tmp_address_ptr <= input_addr_ptr; --increase address of input RAM
+                        input_addr_ptr <= tmp_addr_ptr + '1';
+
+
+                    when s5 => --a4x4+...+a0x0
+                        report "State S5";
+                        write (my_line,string'("product is "));
+                        write(my_line,prod);
+                        writeline(output, my_line); 
+                        write (my_line,string'("adder_output is "));
+                        write(my_line,adder_output);
+                        writeline(output, my_line); 
+
+                        state <= s1;
+                        enable_total_output <= '1';
+                        reset_and_recompute <= '1';
+                        tmp_address_ptr <= output_addr_ptr; -- increase address of OUTPUT RAM
+                        output_addr_ptr <= tmp_address_ptr + '1';
+                        output_ram_we <= '1'; -- set write enable of output ram so that it stores the results
+
+                end case;
             end if;
 		end if;
 	end process;
