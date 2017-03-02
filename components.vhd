@@ -4,8 +4,8 @@ use ieee.std_logic_1164.all;
 package components is
 
 	component bl_ram_write_first is
-	        generic ( address_bus : integer := 8;  -- 256 addresses
-	                  word_size : integer := 16);
+	        generic ( address_bus : integer;
+	                  word_size : integer);
 	        port (clock : in std_logic;
 	              we : in std_logic;
 	              en : in std_logic;

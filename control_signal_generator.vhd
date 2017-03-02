@@ -9,9 +9,8 @@ use ieee.std_logic_unsigned.all;
 
 entity control_signal_generator is
     generic(input_size : integer;
-            address_bus : integer
-           );
-    port ( 	start_running : in std_logic; -- After writting every data inside input RAMs, then FSM should start running
+            address_bus : integer);
+    port (  start_running : in std_logic; -- After writting every data inside input RAMs, then FSM should start running
             input_ram_we : in std_logic; -- Set it only to write data inside input RAMs, afterwards just unset it
             clock : in std_logic;
             ram_input_A : in std_logic_vector (input_size-1 downto 0);
@@ -22,8 +21,8 @@ end control_signal_generator;
 architecture fsm of control_signal_generator is
     type state_type is (s1, s2, s3, s4, s5); -- for fsm
     signal state : state_type; -- for fsm
-    signal 	reset_and_recompute : std_logic; -- reset register r3
-    signal  enable_total_output : std_logic; -- enable register
+    signal reset_and_recompute : std_logic; -- reset register r3
+    signal enable_total_output : std_logic; -- enable register
 
     signal A_mult_in,X_mult_in : std_logic_vector (input_size-1 downto 0);
     signal prod,adder_output,adder_input_from_r3 : std_logic_vector (2*input_size-1 downto 0);
@@ -32,6 +31,10 @@ architecture fsm of control_signal_generator is
     -- inputs and output from the previously (1st exercise) now become internal signals
     signal input_A,input_X : std_logic_vector (input_size-1 downto 0);
     signal Y_result : std_logic_vector (2*input_size-1 downto 0);
+
+    -- for addresses and rams
+    signal input_addr_ptr, output_addr_ptr, tmp_address_ptr : std_logic_vector(address_bus-1 downto 0);
+    signal output_ram_we : std_logic;
 
 begin
 	cin <= '0';
@@ -45,13 +48,10 @@ begin
 	multiply_unit : multiply generic map (input_size) port map (A_mult_in,X_mult_in,prod);
 	addition_unit : adder generic map (2*input_size) port map (cin,prod,adder_input_from_r3,adder_output,cout);
 
-    -- for addresses and rams
-    signal input_addr_ptr, output_addr_ptr, tmp_address_ptr : std_logic_vector(2**address_bus-1 downto 0);
-    signal input_ram_we, output_ram_we std_logic;
     -- HERE ADD 3 RAMs for inputs and outputs!!!!!
-    bl_ram_write_first : input_A_ram generic map(address_bus,input_size) port map(clock, input_ram_we, input_addr_ptr, ram_input_A, input_A);
-    bl_ram_write_first : input_X_ram generic map(address_bus,input_size) port map(clock, input_ram_we, input_addr_ptr, ram_input_X, input_X);
-    bl_ram_write_first : output_ram generic map(address_bus,2*input_size) port map(clock, output_ram_we, output_addr_ptr, Y_result, ram_output_result);
+    input_A_ram : bl_ram_write_first generic map(address_bus,input_size) port map(clock, input_ram_we ,'1', input_addr_ptr, ram_input_A, input_A);
+    input_X_ram : bl_ram_write_first generic map(address_bus,input_size) port map(clock, input_ram_we ,'1', input_addr_ptr, ram_input_X, input_X);
+    output_ram : bl_ram_write_first generic map(address_bus,2*input_size) port map(clock, output_ram_we ,'1', output_addr_ptr, Y_result, ram_output_result);
 
 
 	process(clock)
@@ -73,7 +73,7 @@ begin
                         reset_and_recompute <= '0';
                         enable_total_output <= '0';
                         tmp_address_ptr <= input_addr_ptr; --increase address of input RAM
-                        input_addr_ptr <= tmp_addr_ptr + '1';
+                        input_addr_ptr <= tmp_address_ptr + '1';
                         output_ram_we <= '0';   -- unset write enable for the output RAM so that
                                                 -- no new data are written there
 
@@ -89,7 +89,7 @@ begin
 
                         state <= s3;
                         tmp_address_ptr <= input_addr_ptr; --increase address of input RAM
-                        input_addr_ptr <= tmp_addr_ptr + '1';
+                        input_addr_ptr <= tmp_address_ptr + '1';
 
 
                     when s3 => --a2x2+...+a0x0
@@ -103,7 +103,7 @@ begin
 
                         state <= s4;
                         tmp_address_ptr <= input_addr_ptr; --increase address of input RAM
-                        input_addr_ptr <= tmp_addr_ptr + '1';
+                        input_addr_ptr <= tmp_address_ptr + '1';
 
                     when s4 =>--a3x3+....+a0x0
                         report "State S4";
@@ -116,7 +116,7 @@ begin
 
                         state <= s5;
                         tmp_address_ptr <= input_addr_ptr; --increase address of input RAM
-                        input_addr_ptr <= tmp_addr_ptr + '1';
+                        input_addr_ptr <= tmp_address_ptr + '1';
 
 
                     when s5 => --a4x4+...+a0x0
