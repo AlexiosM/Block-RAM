@@ -20,15 +20,15 @@ architecture ram_behav of bl_ram_write_first is
 begin
         process (clock)
         begin
-                if clock'event and clock = '1' then
-                        if en = '1' then
-                                if we = '1' then
-                                        RAM(conv_integer(addr)) <= di;
-					do <= di;	-- read and write at the same time slases
-                                else
-					do <= RAM(conv_integer(addr));
-				end if;
-                        end if;
+            if clock'event and clock = '1' then
+                if en = '1' then
+                    if we = '1' then
+                        RAM(conv_integer(addr)) <= di;
+                        do <= di;	-- read and write at the same time slases
+                    else
+                        do <= RAM(conv_integer(addr));
+                    end if;
                 end if;
+            end if;
         end process;
 end ram_behav;

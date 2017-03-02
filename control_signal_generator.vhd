@@ -6,23 +6,23 @@ use std.textio.all; -- to print signals
 use ieee.std_logic_textio.all; -- to print signals
 
 entity control_signal_generator is
-generic(input_size : integer);
-port ( 	clock : in std_logic;
-	input_A : in std_logic_vector (input_size-1 downto 0);
-	input_X : in std_logic_vector (input_size-1 downto 0);
-	Y_result : out std_logic_vector (2*input_size-1 downto 0));
+    generic(input_size : integer);
+    port ( 	clock : in std_logic;
+            input_A : in std_logic_vector (input_size-1 downto 0);
+            input_X : in std_logic_vector (input_size-1 downto 0);
+            Y_result : out std_logic_vector (2*input_size-1 downto 0));
 end control_signal_generator;
 
 architecture fsm of control_signal_generator is
-	type state_type is (s1, s2, s3, s4, s5); -- for fsm
-	signal state : state_type; -- for fsm
-	signal 	reset_and_recompute : std_logic; -- reset register r3
-      	signal  enable_total_output : std_logic; -- enable register
+    type state_type is (s1, s2, s3, s4, s5); -- for fsm
+    signal state : state_type; -- for fsm
+    signal 	reset_and_recompute : std_logic; -- reset register r3
+    signal  enable_total_output : std_logic; -- enable register
 
-	signal A_mult_in,X_mult_in : std_logic_vector (input_size-1 downto 0);
-	signal prod,adder_output,adder_input_from_r3 : std_logic_vector (2*input_size-1 downto 0);
-	signal cin,cout : std_logic;
-	
+    signal A_mult_in,X_mult_in : std_logic_vector (input_size-1 downto 0);
+    signal prod,adder_output,adder_input_from_r3 : std_logic_vector (2*input_size-1 downto 0);
+    signal cin,cout : std_logic;
+
 begin
 	cin <= '0';
 	reset_and_recompute <= '1';	-- set s1 for initial state
