@@ -9,7 +9,7 @@ use ieee.std_logic_unsigned.all;
 
 entity control_signal_generator is
     generic(input_size : integer;
-            address_bus : integer);
+	    address_bus : integer);
     port (  start_running : in std_logic; -- After writting every data inside input RAMs, then FSM should start running
             input_ram_we : in std_logic; -- Set it only to write data inside input RAMs, afterwards just unset it
             clock : in std_logic;
@@ -33,7 +33,7 @@ architecture fsm of control_signal_generator is
     signal Y_result : std_logic_vector (2*input_size-1 downto 0);
 
     -- for addresses and rams
-    signal input_addr_ptr, output_addr_ptr, tmp_address_ptr : std_logic_vector(address_bus-1 downto 0);
+    signal input_addr_ptr, output_addr_ptr, tmp_address_ptr : std_logic_vector(2**address_bus-1 downto 0);
     signal output_ram_we : std_logic;
 
 begin
