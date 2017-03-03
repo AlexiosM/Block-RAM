@@ -23,7 +23,7 @@ begin
         if clock'event and clock = '1' then
             if en = '1' then
                 if we = '1' then
-                    RAM(conv_integer(addr)) <= di;
+                    RAM(conv_integer(addr)) <= di; -- it maps the logic vector eg. 1001 to integer (=9 here) so with n bits we have 2**n addresses
                     do <= di;	-- read and write at the same time slases
                 else
                     do <= RAM(conv_integer(addr));

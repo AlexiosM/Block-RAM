@@ -5,36 +5,43 @@ use work.components.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-entity control_signal_generator is
-end control_signal_generator;
 
-architecture complete_design_behav of control_signal_generator is
+
+entity test_complete_design is
+end test_complete_design;
+
+
+architecture complete_design_behav of test_complete_design is
 
 constant data_width : integer := 4;
-constant addr : integer := 3;
+constant addr : integer := 4;
 constant clk_period : time := 4 ns;
 
-component control_signal_generator is
-    generic(input_size : integer;
-	    address_bus : integer);
-    port (  start_running : in std_logic; -- After writting every data inside input RAMs, then FSM should start running
-            input_ram_we : in std_logic; -- Set it only to write data inside input RAMs, afterwards just unset it
-            clock : in std_logic;
-            ram_input_A : in std_logic_vector (data_width-1 downto 0);
-            ram_input_X : in std_logic_vector (data_width-1 downto 0);
-            ram_output_result : out std_logic_vector (2*data_width-1 downto 0));
-end component control_signal_generator;
+component complete_design is
+    generic(    input_size : integer := 4;
+                address_bus : integer := 4);
+    port(   reset : in std_logic;  
+	    clock : in std_logic;
+	    input_A_from_outside : in std_logic_vector(input_size-1 downto 0);
+            input_X_from_outside : in std_logic_vector(input_size-1 downto 0);
+	    input_RAM_address_from_outside : in std_logic_vector(address_bus-1 downto 0);
+            initialize_input_RAMs : in std_logic; -- MUX_Sel will be the same as start_FSM
+            output_from_RAM : out std_logic_vector(2*input_size-1 downto 0));
+end component;
 
 
 signal clk : std_logic;
 signal A : std_logic_vector (data_width-1 downto 0) := (others=>'0');
 signal X : std_logic_vector (data_width-1 downto 0) := (others=>'0');
 signal Y : std_logic_vector (2*data_width-1 downto 0) := (others=>'0');
-signal input_write_enable, start_fsm : std_logic;
-
+signal initialization_phase : std_logic;
+signal input_outside_addr : std_logic_vector(addr-1 downto 0);
+signal output : std_logic_vector(2*data_width-1 downto 0);
+signal reset : std_logic;  
 
 begin
-	design_component : control_signal_generator generic map(input_size=>data_width, address_bus=>addr) port map(start_running=>start_fsm,input_ram_we=>input_write_enable,clock=>clk,ram_input_A=>A,ram_input_X=>X,ram_output_result=>Y);
+
+design : complete_design generic map(data_width, addr) port map(reset, clk,A,X,input_outside_addr,initialization_phase,output);
 	clk_process : process
 	begin
 		clk <= '0';
@@ -43,13 +50,16 @@ begin
 		wait for clk_period/2;
 	end process;
 
-	stimul_proc : process
+	design_proc : process
 	begin
-
+		reset <= '0';
+		wait for 7 ns;
+		reset <= '1';
+		wait for 8 ns;
+		reset <= '0';
+		initialization_phase <= '1';
+		wait for 100 ns;
+		initialization_phase <= '0';
+		wait for 100 ns;
 	end process;
-
-
-
-
-
 end complete_design_behav;

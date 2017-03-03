@@ -4,19 +4,20 @@ use ieee.std_logic_1164.all;
 package components is
 
     
-    component control_signal_generator is
-        generic(input_size : integer;
-        address_bus : integer);
-        port (  start_running : in std_logic; -- After writting every data inside input RAMs, then FSM should start running
-                input_ram_we : in std_logic; -- Set it only to write data inside input RAMs, afterwards just unset it
-                clock : in std_logic;
-                input_from_ram_A : in std_logic_vector (input_size-1 downto 0);
-                input_from_ram_X : in std_logic_vector (input_size-1 downto 0);
-
-                next_input_address_ptr : out std_logic_vector(address_bus-1 downto 0); -- it is the next address of the input ram. It will be input for the multiplexer
-                output_ram_we : out std_logic;
-                ram_output_result : out std_logic_vector (2*input_size-1 downto 0) );
-    end component;
+component control_signal_generator is
+    generic(input_size : integer;
+	    address_bus : integer);
+    port ( reset : in std_logic; 
+ 		start_running : in std_logic; -- After writting every data inside input RAMs, then FSM should start running
+            clock : in std_logic;
+            input_from_ram_A : in std_logic_vector (input_size-1 downto 0);
+            input_from_ram_X : in std_logic_vector (input_size-1 downto 0);            
+            
+            next_input_address_ptr : out std_logic_vector(address_bus-1 downto 0); -- it is the next address of the input ram. It will be input for the multiplexer
+	    next_output_ram_address : out std_logic_vector(address_bus-1 downto 0);
+            output_ram_we : out std_logic;
+            ram_output_result : out std_logic_vector (2*input_size-1 downto 0));
+end component;
 
 
     component mux_2to1 is

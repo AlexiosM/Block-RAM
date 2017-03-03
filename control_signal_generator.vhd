@@ -10,13 +10,15 @@ use ieee.std_logic_unsigned.all;
 entity control_signal_generator is
     generic(input_size : integer;
 	    address_bus : integer);
-    port (  start_running : in std_logic; -- After writting every data inside input RAMs, then FSM should start running
-            input_ram_we : in std_logic; -- Set it only to write data inside input RAMs, afterwards just unset it
+
+    port (  reset : in std_logic; 
+	    start_running : in std_logic; -- After writting every data inside input RAMs, then FSM should start running
             clock : in std_logic;
             input_from_ram_A : in std_logic_vector (input_size-1 downto 0);
-            input_from_ram_X : in std_logic_vector (input_size-1 downto 0);            
+            input_from_ram_X : in std_logic_vector (input_size-1 downto 0);         
             
             next_input_address_ptr : out std_logic_vector(address_bus-1 downto 0); -- it is the next address of the input ram. It will be input for the multiplexer
+	    next_output_ram_address : out std_logic_vector(address_bus-1 downto 0);
             output_ram_we : out std_logic;
             ram_output_result : out std_logic_vector (2*input_size-1 downto 0));
 end control_signal_generator;
@@ -32,12 +34,14 @@ architecture fsm of control_signal_generator is
     signal cin,cout : std_logic;
 
     -- to hold the last address and increase the output to the next address
-    signal last_address_ptr : std_logic_vector(address_bus-1 downto 0) <= (others => '0');
+    signal last_address_ptr, output_last_address_ptr : std_logic_vector(address_bus-1 downto 0);
     
 begin
 	cin <= '0';
 	reset_and_recompute <= '1';	-- set s1 for initial state
-		
+        last_address_ptr <= (others => '0');
+	output_last_address_ptr <= (others => '0');
+
 	-- ToDo : make clearly the mapping between the ports in order hdl_designer not to complain for violations about positional association
 	register_r1 : generic_register generic map (input_size) port map (clock,'0','1',input_from_ram_A,A_mult_in); -- input register for A
 	register_r2 : generic_register generic map (input_size) port map (clock,'0','1',input_from_ram_X,X_mult_in); -- input register for X
@@ -46,12 +50,15 @@ begin
 	multiply_unit : multiply generic map (input_size) port map (A_mult_in,X_mult_in,prod);
 	addition_unit : adder generic map (2*input_size) port map (cin,prod,adder_input_from_r3,adder_output,cout);
 
-	process(clock)
+	process(clock, reset)
 		variable my_line : line;
 	begin
 		if rising_edge(clock) then
-            if start_running = '1' then
-                case state is
+		  if reset = '1' then
+			last_address_ptr <= (others => '0');
+		  else
+                   if start_running = '1' then
+                   case state is
                     when s1 => --a0x0
                         report "State S1";
                         write (my_line,string'("product is "));
@@ -64,8 +71,8 @@ begin
                         state <= s2;
                         reset_and_recompute <= '0';
                         enable_total_output <= '0';
-                        last_address_ptr <= next_input_address_ptr; -- go to the next input RAM address
-                        next_input_address_ptr <= last_address_ptr + '1';
+			last_address_ptr <= last_address_ptr + '1';
+                        next_input_address_ptr <= last_address_ptr; -- go to the next input RAM address
 
                         output_ram_we <= '0';   -- unset write enable for the output RAM so that
                                                 -- no new data are written there
@@ -81,8 +88,8 @@ begin
                         writeline(output, my_line); 
 
                         state <= s3;
-                        last_address_ptr <= next_input_address_ptr; -- go to the next input RAM address
-                        next_input_address_ptr <= last_address_ptr + '1';
+			last_address_ptr <= last_address_ptr + '1';
+                        next_input_address_ptr <= last_address_ptr; -- go to the next input RAM address
 
 
                     when s3 => --a2x2+...+a0x0
@@ -95,8 +102,8 @@ begin
                         writeline(output, my_line); 
 
                         state <= s4;
-                        last_address_ptr <= next_input_address_ptr; -- go to the next input RAM address
-                        next_input_address_ptr <= last_address_ptr + '1';
+			last_address_ptr <= last_address_ptr + '1';
+                        next_input_address_ptr <= last_address_ptr; -- go to the next input RAM address
 
                     when s4 =>--a3x3+....+a0x0
                         report "State S4";
@@ -108,8 +115,8 @@ begin
                         writeline(output, my_line); 
 
                         state <= s5;
-                        last_address_ptr <= next_input_address_ptr; -- go to the next input RAM address
-                        next_input_address_ptr <= last_address_ptr + '1';
+			last_address_ptr <= last_address_ptr + '1';
+                        next_input_address_ptr <= last_address_ptr; -- go to the next input RAM address
 
 
                     when s5 => --a4x4+...+a0x0
@@ -124,10 +131,14 @@ begin
                         state <= s1;
                         enable_total_output <= '1';
                         reset_and_recompute <= '1';
+			output_last_address_ptr <= output_last_address_ptr + '1';
+			next_output_ram_address <= output_last_address_ptr;
+
                         output_ram_we <= '1'; -- set write enable of output ram so that it stores the results
 
                 end case;
-            end if;
+            	end if;
+		end if;
 		end if;
 	end process;
 end fsm;
